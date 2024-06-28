@@ -1,7 +1,7 @@
 # render.yaml
 
 services:
-  - type: docker
+  - type: Docker
     name: telegram_bot_3.1
     buildCommand: docker build -t telegram_bot_3.1 .
     dockerfilePath: ./Dockerfile
