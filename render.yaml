@@ -4,8 +4,5 @@ services:
   - type: web
     name: telegram_bot_3.1
     buildCommand: docker build -t telegram_bot_3.1 .
-   
     startCommand: docker run -p 8080:8080 telegram_bot_3.1
-    preDeployCommand: |
-      # Example: Run database migrations
-      python manage.py migrate
+ 
