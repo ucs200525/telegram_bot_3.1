@@ -1,10 +1,9 @@
 # render.yaml
 
 services:
-  - name: telegram_bot_3.1
+  - type: docker
+    name: telegram_bot_3.1
     buildCommand: docker build -t telegram_bot_3.1 .
     dockerfilePath: ./Dockerfile
     startCommand: docker run -p 8080:8080 telegram_bot_3.1
-    preDeployCommand: |
-      # Example: Run database migrations
-      python manage.py migrate
+
