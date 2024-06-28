@@ -1,0 +1,6 @@
+pandas
+requests
+python-telegram-bot
+pytz
+openpyxl
+opencage
