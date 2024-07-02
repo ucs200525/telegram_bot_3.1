@@ -10,6 +10,7 @@ from opencage.geocoder import OpenCageGeocode
 import os
 import logging
 import subprocess
+from flask import Flask
 
 # Configure logging
 logging.basicConfig(
@@ -69,7 +70,7 @@ def update_excel_with_date(file_path, sunrise_date, sunset_date, sunrise_next_da
 # Function to convert Excel to image using Node.js script with specific date
 def save_excel_as_image_with_nodejs_date(excel_file_path, output_image_path, sheet_name, date_str):
     try:
-        node_script = r'/usr/src/app/image2.js'  # Update this path to your Node.js script
+        node_script = r's/image2.js'  # Update this path to your Node.js script
         subprocess.run(['node', node_script, excel_file_path, sheet_name, output_image_path, date_str], check=True)
         logger.info(f"Image successfully saved to {output_image_path}")
     except Exception as e:
@@ -78,11 +79,19 @@ def save_excel_as_image_with_nodejs_date(excel_file_path, output_image_path, she
 # Function to get DrikPanchang screenshot using Node.js script with specific date
 def get_drikpanchang_screenshot_date(city, date, output_image_path):
     try:
-        node_script = r'/usr/src/app/newProj.js'  # Update this path to your Node.js script
+        node_script = r'/newProj.js'  # Update this path to your Node.js script
         subprocess.run(['node', node_script, city, date, output_image_path], check=True)
         logger.info(f"DrikPanchang screenshot successfully saved to {output_image_path}")
     except Exception as e:
         logger.error(f"Error capturing DrikPanchang screenshot: {e}")
+
+# Flask application
+app = Flask(__name__)
+
+@app.route('/start-bot', methods=['GET'])
+def start_bot():
+    main()
+    return "Bot started", 200
 
 # Command handler to start the conversation for /gt
 async def send_table_start(update: Update, context: CallbackContext):
@@ -263,9 +272,9 @@ async def cancel_command_handler(update: Update, context: CallbackContext):
 def main():
     # Prompt user to enter tokens and paths
     opencage_api_key = '699522e909454a09b82d1c728fc79925'
-    excel_file_path = r'/usr/src/app/Bharghava_Siddhanta_Panchangam.xlsx'
-    image_save_path = r'/usr/src/app/ExcelToImage.png'
-    drikpanchang_image_path = r'/usr/src/app/DrikPanchangImage.png'
+    excel_file_path = r'/Bharghava_Siddhanta_Panchangam.xlsx'
+    image_save_path = r'/ExcelToImage.png'
+    drikpanchang_image_path = r'/DrikPanchangImage.png'
     bot_token = '7274941037:AAHIWiU5yvfIzo7eJWPu9S5CeJIid6ATEyM'
 
     # Create the Application instance
