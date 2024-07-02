@@ -1,4 +1,3 @@
-import platform
 import pandas as pd
 import requests
 from datetime import datetime, timedelta
@@ -10,7 +9,7 @@ from opencage.geocoder import OpenCageGeocode
 import os
 import logging
 import subprocess
-from flask import Flask
+from flask import Flask, send_from_directory
 
 # Configure logging
 logging.basicConfig(
@@ -88,10 +87,66 @@ def get_drikpanchang_screenshot_date(city, date, output_image_path):
 # Flask application
 app = Flask(__name__)
 
+# Endpoint to start the bot
 @app.route('/start-bot', methods=['GET'])
 def start_bot():
     main()
     return "Bot started", 200
+
+# Command handler to start the conversation for /gt
+@app.route('/')
+def index():
+    return "Hello, World!"
+
+# Command handler to serve favicon.ico
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+# Command handler to start the conversation for /dgt
+@app.route('/dgt')
+def dgt():
+    return "This is the route for /dgt"
+
+# Command handler to handle unknown routes
+@app.errorhandler(404)
+def page_not_found(e):
+    return "404 Not Found", 404
+
+# Command handler to cancel ongoing operations
+@app.route('/cancel')
+def cancel():
+    return "Operation cancelled."
+
+# Command handler for /start
+async def start_command_handler(update: Update, context: CallbackContext):
+    start_message = (
+        "Welcome to the Panchangam Bot!\n"
+        "Here are the available commands:\n\n"
+        "/gt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for your location. Just send your location (e.g., Vijayawada).\n"
+        "/dgt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for a specific date and location. Send the date and location separated by a comma (e.g., 26/06/2024, Vijayawada).\n"
+        "/cancel - Cancel the current operation."
+    )
+    await update.message.reply_text(start_message)
+
+async def help_command_handler(update: Update, context: CallbackContext):
+    await update.message.reply_text("This is the help message.")
+
+async def main_handler(update: Update, context: CallbackContext):
+    await update.message.reply_text("You sent a text message.")
+
+# Command handler for handling unknown commands
+async def unknown_command_handler(update: Update, context: CallbackContext):
+    await update.message.reply_text("Sorry, I didn't understand that command. Please use one of the available commands:\n"
+                                      "/gt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for your location. Just send your location (e.g., Vijayawada).\n"
+                                      "/dgt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for a specific date and location. Send the date and location separated by a comma (e.g., 26/06/2024, Vijayawada).\n"
+                                      "/cancel - Cancel the current operation.")
+
+# Command handler to cancel ongoing operations
+async def cancel_command_handler(update: Update, context: CallbackContext):
+    await update.message.reply_text("Operation cancelled.")
+    return ConversationHandler.END  # End any active conversation
 
 # Command handler to start the conversation for /gt
 async def send_table_start(update: Update, context: CallbackContext):
@@ -108,7 +163,7 @@ async def receive_location(update: Update, context: CallbackContext):
     location = update.message.text
     user_id = update.message.from_user.id
     username = update.effective_user.username
-    logger.info(f'User {user_id} , {username} sent location: {location}')
+    logger.info(f'User {user_id}, {username} sent location: {location}')
     await update.message.reply_text("Your task is in progress...")
 
     # Use OpenCage Geocoder to get coordinates
@@ -119,13 +174,13 @@ async def receive_location(update: Update, context: CallbackContext):
         latitude = result[0]['geometry']['lat']
         longitude = result[0]['geometry']['lng']
         logger.info(f'Coordinates for {location}: {latitude}, {longitude}')
-        
+
         local_tz = 'Asia/Kolkata'  # Assuming Indian Standard Time (IST)
-        
+
         # Get sun times for today
         today = datetime.now()
         day_of_week = today.strftime('%A').upper()  # Get day of the week
-        
+
         sunrise_today, sunset_today, sunrise_tomorrow = get_sun_times_for_date(latitude, longitude, local_tz, today)
 
         # Update the Excel file with today's sheet
@@ -166,7 +221,7 @@ async def receive_date_location(update: Update, context: CallbackContext):
     date_str, location = date_location[0].strip(), date_location[1].strip()
     user_id = update.message.from_user.id
     username = update.effective_user.username
-    logger.info(f'User {user_id} , {username} sent date: {date_str} and location: {location}')
+    logger.info(f'User {user_id}, {username} sent date: {date_str} and location: {location}')
     await update.message.reply_text("Your task is in progress...")
 
     try:
@@ -183,9 +238,9 @@ async def receive_date_location(update: Update, context: CallbackContext):
         latitude = result[0]['geometry']['lat']
         longitude = result[0]['geometry']['lng']
         logger.info(f'Coordinates for {location}: {latitude}, {longitude}')
-        
+
         local_tz = 'Asia/Kolkata'  # Assuming Indian Standard Time (IST)
-        
+
         # Get day of the week for the given date
         day_of_week = date.strftime('%A').upper()
 
@@ -239,35 +294,6 @@ async def handle_confirmation(update: Update, context: CallbackContext):
 
     # End the conversation
     return ConversationHandler.END
-
-# Command handler for /start
-async def start_command_handler(update: Update, context: CallbackContext):
-    start_message = (
-        "Welcome to the Panchangam Bot!\n"
-        "Here are the available commands:\n\n"
-        "/gt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for your location. Just send your location (e.g., Vijayawada).\n"
-        "/dgt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for a specific date and location. Send the date and location separated by a comma (e.g., 26/06/2024, Vijayawada).\n"
-        "/cancel - Cancel the current operation."
-    )
-    await update.message.reply_text(start_message)
-
-async def help_command_handler(update: Update, context: CallbackContext):
-    await update.message.reply_text("This is the help message.")
-
-async def main_handler(update: Update, context: CallbackContext):
-    await update.message.reply_text("You sent a text message.")
-
-# Command handler for handling unknown commands
-async def unknown_command_handler(update: Update, context: CallbackContext):
-    await update.message.reply_text("Sorry, I didn't understand that command. Please use one of the available commands:\n"
-                                      "/gt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for your location. Just send your location (e.g., Vijayawada).\n"
-                                      "/dgt - Get a screenshot of Bhargava Panchangam and Drik Panchangam for a specific date and location. Send the date and location separated by a comma (e.g., 26/06/2024, Vijayawada).\n"
-                                      "/cancel - Cancel the current operation.")
-
-# Command handler to cancel ongoing operations
-async def cancel_command_handler(update: Update, context: CallbackContext):
-    await update.message.reply_text("Operation cancelled.")
-    return ConversationHandler.END  # End any active conversation
 
 def main():
     # Prompt user to enter tokens and paths
