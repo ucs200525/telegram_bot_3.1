@@ -37,7 +37,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Push the Docker image
-        run: docker push my-telegram-bot
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/my-telegram-bot
 
   deploy:
     runs-on: ubuntu-latest
